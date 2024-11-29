@@ -4,6 +4,8 @@ import messagesRoute from './routes/messages.js';
 import usersRoute from './routes/users.js';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import plantsRoute from './routes/plants.js';
+import logsRoute from './routes/logs.js';
 
 dotenv.config();
 const app = express();
@@ -22,8 +24,10 @@ db.once('open', () => console.log('Connected toDatabase'));
 app.use('/', indexRoute); // zo importeer ik de model files 
 app.use('/messages', messagesRoute);
 app.use('/users', usersRoute); 
+app.use('/plants', plantsRoute);
+app.use('/logs', logsRoute);
 
-const PORT = process.env.PORT || 8503;
+const PORT = process.env.PORT || 8403;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
