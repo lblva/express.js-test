@@ -45,7 +45,7 @@ app.use(session({
   
       if (!user) {
         user = await User.create({
-          username: profile.displayName,
+          name: profile.displayName,
           email: email,
         });
       }
