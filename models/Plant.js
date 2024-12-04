@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 const plantSchema = new mongoose.Schema({
     name: { type: String, required: true },
     description: { type: String, required: true},
-    waterinfo: { type: Number, required: true},
+    water: { type: Number, required: true},
+    waterinfo: { type: String, required: true},
     lightrequirements: { type: String, required: true},
     potting: { type: String, required: true},
     image: { type: String, default: ''},

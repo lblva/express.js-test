@@ -28,6 +28,23 @@ router.post('/', async (req, res) => {
     }
 });
 
+
+router.patch('/:id', async (req, res) => {
+    const updatedPlantData = req.body; // Get the updated data from the request body
+    const { id } = req.params;
+    try {
+        const updatedPlant = await Plant.findByIdAndUpdate(id, updatedPlantData, { new: true });
+        if (updatedPlant) {
+            res.status(200).json({ plant: 'Plant updated successfully!', plantData: updatedPlant });
+        } else {
+            res.status(404).json({ plant: 'User not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update plant' });
+    }
+});
+
+
 export default router;
 
 
