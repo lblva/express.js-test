@@ -47,7 +47,13 @@ app.use(session({
         user = await User.create({
           name: profile.displayName,
           email: email,
+          profilePicture: profile.photos[0]?.value || '', // Save profile picture if available
+
         });
+      }else if (!user.profilePicture) {
+        // Update profile picture if it wasn't stored previously
+        user.profilePicture = profile.photos[0]?.value || '';
+        await user.save();
       }
   
       return done(null, user);
@@ -103,6 +109,7 @@ app.get('/auth/google', (req, res, next) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        profilePicture: user.profilePicture, // Include profile picture in the response
       };
   
       const redirectUrl = `${redirectUri || fallbackUri}?user=${encodeURIComponent(JSON.stringify(userInfo))}`;
