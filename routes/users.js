@@ -40,30 +40,33 @@ router.post('/:id/plants', async (req, res) => {
   const { id } = req.params;  // User ID from the URL
   const { plantId } = req.body;  // Plant ID from the request body
 
+  console.log("User ID:", id);
+  console.log("Plant ID:", plantId);
+
   try {
-    // Check if the user exists
     const user = await User.findById(id);
     if (!user) {
+      console.log('User not found');
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if the plant exists (optional, based on your requirements)
     const plant = await Plant.findById(plantId);
     if (!plant) {
+      console.log('Plant not found');
       return res.status(404).json({ error: 'Plant not found' });
     }
 
-    // Add the plant to the user's plants array
     user.plants.push(plantId);
-
-    // Save the updated user
     await user.save();
 
+    console.log('Plant added to user collection');
     res.status(200).json({ message: 'Plant added to your collection!', userData: user });
   } catch (error) {
+    console.error('Error:', error);
     res.status(500).json({ error: 'Failed to add the plant to user collection' });
   }
 });
+
 
 
 
