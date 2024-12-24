@@ -37,11 +37,10 @@ router.post('/', async (req, res) => {
 
 
 
-// PUT: Update or add a plant to the user's collection
-router.put('/:userId/plants', async (req, res) => {
+// PUT: Update user details or add a plant to the user's collection
+router.put('/:userId', async (req, res) => {
     const { userId } = req.params; // Get the user ID from params
-    const { plantId } = req.body; // Get the plant ID from request body
-    const { plantName, plantImage } = req.body; // Get plant details from request body
+    const { name, plantId, plantName, plantImage } = req.body; // Get user name and plant details from request body
   
     try {
       // Find the user by userId
@@ -51,19 +50,15 @@ router.put('/:userId/plants', async (req, res) => {
         return res.status(404).json({ message: 'User not found' });
       }
   
-      // Check if plant already exists in the user's plants array
-      const plantIndex = user.plants.findIndex((plant) => plant._id.toString() === plantId);
+      // If the user provided a new name, update it
+      if (name) {
+        user.name = name;
+        console.log('User name updated');
+      }
   
-      if (plantIndex !== -1) {
-        // If plant exists, update the plant
-        user.plants[plantIndex] = {
-          ...user.plants[plantIndex],
-          name: plantName,
-          image: plantImage,
-        };
-        console.log('Plant updated');
-      } else {
-        // If plant does not exist, add it to the plants array
+      // If the request includes plant details (plantId, plantName, plantImage), add the plant to the collection
+      if (plantId && plantName && plantImage) {
+        // Add the plant to the user's plants array
         user.plants.push({
           _id: plantId,
           name: plantName,
@@ -72,13 +67,13 @@ router.put('/:userId/plants', async (req, res) => {
         console.log('Plant added');
       }
   
-      // Save the user with updated plant collection
+      // Save the user with updated details (name and/or new plant)
       await user.save();
   
-      res.json({ message: 'Plant updated or added successfully!', userData: user });
+      res.json({ message: 'User updated and plant added successfully!', userData: user });
     } catch (error) {
-      console.error('Error updating or adding plant:', error);
-      res.status(500).json({ message: 'Error updating or adding plant', error: error.message });
+      console.error('Error updating user or adding plant:', error);
+      res.status(500).json({ message: 'Error updating user or adding plant', error: error.message });
     }
   });
   
