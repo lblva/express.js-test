@@ -13,6 +13,14 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET: Retreive one user by ID
+router.get('/:id', async (req, res) => {
+    const { id } = req.params; // == req.params.id;
+    const user = await User.findById(id);
+    res.json(user);
+  }); 
+  
+
 //POST: Add a new user
 router.post('/', async (req, res) => {
 
