@@ -49,6 +49,11 @@ router.put('/:id/plants', async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Ensure user.plants is initialized as an array
+        if (!Array.isArray(user.plants)) {
+            user.plants = [];
+        }
+
         // Add the plant ID to the user's plants array if it's not already in the list
         if (!user.plants.includes(plantId)) {
             user.plants.push(plantId);
@@ -57,13 +62,15 @@ router.put('/:id/plants', async (req, res) => {
         // Save the updated user data
         const updatedUser = await user.save();
         res.status(200).json({
-            user: 'Plant added to user successfully!',
+            message: 'Plant added to user successfully!',
             userData: updatedUser,
         });
     } catch (error) {
+        console.error(error); // Log the error for debugging purposes
         res.status(500).json({ error: 'Failed to update user' });
     }
 });
+
 
 
 
