@@ -53,6 +53,27 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+// Add a plant to the user's list
+app.put('/users/:userId/plants', async (req, res) => {
+    const { userId } = req.params;
+    const { plantId } = req.body;
+  
+    try {
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ message: 'User not found' });
+  
+      if (!user.plants.includes(plantId)) {
+        user.plants.push(plantId);
+        await user.save();
+      }
+  
+      res.status(200).json(user);
+    } catch (error) {
+      res.status(500).json({ message: 'Server error', error });
+    }
+  });
+  
+
 
 // DELETE: Remove a user by ID
 router.delete('/:id', async (req, res) => {
