@@ -37,39 +37,22 @@ router.post('/', async (req, res) => {
 
 
 
-// PUT: Add a plant to an existing user's plant list
-router.put('/:id/plants', async (req, res) => {
-    const { id } = req.params; // Get the user ID from the URL parameters
-    const { plantId } = req.body; // Get the plant ID from the request body
-
+// PUT: Update an existing user
+router.put('/:id', async (req, res) => {
+    const { id } = req.params; // Get the user ID from params
+    const updatedUser = req.body; // Get the new user data from request body
+    
     try {
-        // Find the user by their ID
-        const user = await User.findById(id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Ensure user.plants is initialized as an array
-        if (!Array.isArray(user.plants)) {
-            user.plants = [];
-        }
-
-        // Add the plant ID to the user's plants array if it's not already in the list
-        if (!user.plants.includes(plantId)) {
-            user.plants.push(plantId);
-        }
-
-        // Save the updated user data
-        const updatedUser = await user.save();
-        res.status(200).json({
-            message: 'Plant added to user successfully!',
-            userData: updatedUser,
-        });
+      const user = await User.findByIdAndUpdate(id, updatedUser, { new: true });
+      if (user) {
+        res.json({ user: 'User updated successfully!', userData: user });
+      } else {
+        res.status(404).json({ user: 'User not found' });
+      }
     } catch (error) {
-        console.error(error); // Log the error for debugging purposes
-        res.status(500).json({ error: 'Failed to update user' });
+      res.status(500).json({ user: 'Error updating user', error: error.user });
     }
-});
+  });
 
 
 
