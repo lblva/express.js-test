@@ -37,42 +37,34 @@ router.post('/', async (req, res) => {
 
 
 
-// PUT: Update an existing user by ID (66f3ddb09524ebed4d774bad)
-router.put('/:id', async (req, res) => {
-    const updatedUserData = req.body; // Get the updated data from the request body
-    const { id } = req.params;
+// PUT: Add a plant to an existing user's plant list
+router.put('/:id/plants', async (req, res) => {
+    const { id } = req.params; // Get the user ID from the URL parameters
+    const { plantId } = req.body; // Get the plant ID from the request body
+
     try {
-        const updatedUser = await User.findByIdAndUpdate(id, updatedUserData, { new: true });
-        if (updatedUser) {
-            res.status(200).json({ user: 'User updated successfully!', userData: updatedUser });
-        } else {
-            res.status(404).json({ user: 'User not found' });
+        // Find the user by their ID
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
+
+        // Add the plant ID to the user's plants array if it's not already in the list
+        if (!user.plants.includes(plantId)) {
+            user.plants.push(plantId);
+        }
+
+        // Save the updated user data
+        const updatedUser = await user.save();
+        res.status(200).json({
+            user: 'Plant added to user successfully!',
+            userData: updatedUser,
+        });
     } catch (error) {
         res.status(500).json({ error: 'Failed to update user' });
     }
 });
 
-// Add a plant to the user's list
-app.put('/users/:userId/plants', async (req, res) => {
-    const { userId } = req.params;
-    const { plantId } = req.body;
-  
-    try {
-      const user = await User.findById(userId);
-      if (!user) return res.status(404).json({ message: 'User not found' });
-  
-      if (!user.plants.includes(plantId)) {
-        user.plants.push(plantId);
-        await user.save();
-      }
-  
-      res.status(200).json(user);
-    } catch (error) {
-      res.status(500).json({ message: 'Server error', error });
-    }
-  });
-  
 
 
 // DELETE: Remove a user by ID
