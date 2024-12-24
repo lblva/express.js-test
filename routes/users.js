@@ -37,22 +37,51 @@ router.post('/', async (req, res) => {
 
 
 
-// PUT: Update an existing user
-router.put('/:id', async (req, res) => {
-    const { id } = req.params; // Get the user ID from params
-    const updatedUser = req.body; // Get the new user data from request body
-    
+// PUT: Update or add a plant to the user's collection
+router.put('/:userId/plants', async (req, res) => {
+    const { userId } = req.params; // Get the user ID from params
+    const { plantId } = req.body; // Get the plant ID from request body
+    const { plantName, plantImage } = req.body; // Get plant details from request body
+  
     try {
-      const user = await User.findByIdAndUpdate(id, updatedUser, { new: true });
-      if (user) {
-        res.json({ user: 'User updated successfully!', userData: user });
-      } else {
-        res.status(404).json({ user: 'User not found' });
+      // Find the user by userId
+      const user = await User.findById(userId);
+  
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
       }
+  
+      // Check if plant already exists in the user's plants array
+      const plantIndex = user.plants.findIndex((plant) => plant._id.toString() === plantId);
+  
+      if (plantIndex !== -1) {
+        // If plant exists, update the plant
+        user.plants[plantIndex] = {
+          ...user.plants[plantIndex],
+          name: plantName,
+          image: plantImage,
+        };
+        console.log('Plant updated');
+      } else {
+        // If plant does not exist, add it to the plants array
+        user.plants.push({
+          _id: plantId,
+          name: plantName,
+          image: plantImage,
+        });
+        console.log('Plant added');
+      }
+  
+      // Save the user with updated plant collection
+      await user.save();
+  
+      res.json({ message: 'Plant updated or added successfully!', userData: user });
     } catch (error) {
-      res.status(500).json({ user: 'Error updating user', error: error.user });
+      console.error('Error updating or adding plant:', error);
+      res.status(500).json({ message: 'Error updating or adding plant', error: error.message });
     }
   });
+  
 
 
 
