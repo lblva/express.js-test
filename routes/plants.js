@@ -27,6 +27,17 @@ router.get('/plants', async (req, res) => {
     }
   });
   
+  router.get('/:id', async (req, res) => {
+    const { id } = req.params;
+    console.log('Fetching plant with ID:', id);
+    try {
+      const plant = await Plant.findById(id);
+      res.json(plant);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch plant' });
+    }
+  });
+  
 
 //POST: Add a new plant
 router.post('/', async (req, res) => {
