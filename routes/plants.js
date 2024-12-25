@@ -28,7 +28,7 @@ router.post('/', async (req, res) => {
     }
 });
 
-app.post('/plants/:plantId/users', async (req, res) => {
+router.post('/plants/:plantId/users', async (req, res) => {
     const { userId } = req.body; // User ID to associate with the plant
     const { plantId } = req.params;
   
@@ -68,7 +68,7 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
-app.delete('/plants/:plantId/users/:userId', async (req, res) => {
+router.delete('/plants/:plantId/users/:userId', async (req, res) => {
     const { plantId, userId } = req.params;
   
     try {
