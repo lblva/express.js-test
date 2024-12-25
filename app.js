@@ -1,3 +1,4 @@
+import express from 'express';
 import indexRoute from './routes/index.js';
 import messagesRoute from './routes/messages.js';
 import usersRoute from './routes/users.js';
@@ -121,3 +122,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+
+
+
