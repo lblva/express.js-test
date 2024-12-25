@@ -13,20 +13,29 @@ router.get('/', async (req, res) => {
     }
 });
 
-//POST: Add a new log
 router.post('/', async (req, res) => {
-
-    // Create a new log instance
-    const newLog = new Log(req.body);
-
-    try {
-        const savedLog = await newLog.save(); // Save the log to the database
-        res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Failed to add log' });
+    const { days, plantId, user } = req.body;
+  
+    // Check if all required data is provided
+    if (!days || !plantId || !user) {
+      return res.status(400).json({ error: 'Missing required fields: days, plantId, or user' });
     }
-});
+  
+    // Create a new log instance
+    const newLog = new Log({
+      user: user,        // User ID
+      plant: plantId,    // Plant ID
+      wateredAt: new Date(), // You might want to set the date manually if needed
+    });
+  
+    try {
+      const savedLog = await newLog.save(); // Save the log to the database
+      res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: 'Failed to add log' });
+    }
+  });
 
 
 
