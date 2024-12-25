@@ -6,12 +6,15 @@ const router = express();
 //GET Retrieve all plants
 router.get('/', async (req, res) => {
     try {
-        const plants = await Plant.find(); // Fetch all users from the database
-        res.status(200).json(plants); // Send the retrieved users as JSON
+      const plants = await Plant.find().populate('users');
+      console.log(plants); // Add this line to check the response
+      res.status(200).json(plants); // Send the populated plants
     } catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve plants' });
+      console.error(error); // Log the error if it occurs
+      res.status(500).json({ message: error.message });
     }
-});
+  });
+  
 
 //POST: Add a new plant
 router.post('/', async (req, res) => {
