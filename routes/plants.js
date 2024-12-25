@@ -28,6 +28,30 @@ router.post('/', async (req, res) => {
     }
 });
 
+app.post('/plants/:plantId/users', async (req, res) => {
+    const { userId } = req.body; // User ID to associate with the plant
+    const { plantId } = req.params;
+  
+    try {
+      const plant = await Plant.findById(plantId);
+  
+      if (!plant) {
+        return res.status(404).json({ message: 'Plant not found' });
+      }
+  
+      // Add the user to the plant's users array
+      if (!plant.users.includes(userId)) {
+        plant.users.push(userId);
+        await plant.save();
+      }
+  
+      res.status(200).json(plant);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
+
 
 router.patch('/:id', async (req, res) => {
     const updatedPlantData = req.body; // Get the updated data from the request body
@@ -44,6 +68,26 @@ router.patch('/:id', async (req, res) => {
     }
 });
 
+app.delete('/plants/:plantId/users/:userId', async (req, res) => {
+    const { plantId, userId } = req.params;
+  
+    try {
+      const plant = await Plant.findById(plantId);
+  
+      if (!plant) {
+        return res.status(404).json({ message: 'Plant not found' });
+      }
+  
+      // Remove the user from the plant's users array
+      plant.users = plant.users.filter(user => user.toString() !== userId);
+      await plant.save();
+  
+      res.status(200).json(plant);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+  
 
 export default router;
 
