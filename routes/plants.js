@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-app.get('/plants', async (req, res) => {
+router.get('/plants', async (req, res) => {
     const userId = req.user.id; // Assuming you have the user ID in the request after verifying the token
     
     try {
