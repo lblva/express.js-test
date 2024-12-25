@@ -20,6 +20,17 @@ router.get('/:id', async (req, res) => {
     const user = await User.findById(id);
     res.json(user);
   }); 
+
+  router.get('/users/:userId/plants', async (req, res) => {
+    const { userId } = req.params; // Fetch plants for a specific user
+    try {
+      const plants = await PlantModel.find({ userId });
+      res.json(plants);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch plants' });
+    }
+  });
+  
   
 
 //POST: Add a new user
