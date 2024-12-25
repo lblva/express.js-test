@@ -13,6 +13,21 @@ router.get('/', async (req, res) => {
     }
 });
 
+app.get('/plants', async (req, res) => {
+    const userId = req.user.id; // Assuming you have the user ID in the request after verifying the token
+    
+    try {
+      // Query plants that the user owns (filter by userId)
+      const plants = await Plant.find({ 'users._id': userId });
+  
+      res.json(plants);  // Send the filtered plants
+    } catch (error) {
+      console.error('Error fetching plants:', error);
+      res.status(500).json({ message: 'Error fetching plants' });
+    }
+  });
+  
+
 //POST: Add a new plant
 router.post('/', async (req, res) => {
 
