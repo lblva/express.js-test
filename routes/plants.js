@@ -4,16 +4,20 @@ import Plant from '../models/Plant.js';
 const router = express();
 
 //GET Retrieve all plants
+// In your plants.js route file:
 router.get('/', async (req, res) => {
     try {
-      const plants = await Plant.find().populate('users');
-      console.log(plants); // Add this line to check the response
-      res.status(200).json(plants); // Send the populated plants
+      // Assuming you have the userId from the session or token
+      const userId = req.user.id; // or you can get it from the request body/query if necessary
+  
+      const plants = await Plant.find({ userId: userId }).populate('userId');
+      res.status(200).json(plants); // Send back only the plants for the current user
     } catch (error) {
-      console.error(error); // Log the error if it occurs
+      console.error(error);
       res.status(500).json({ message: error.message });
     }
   });
+  
   
 
 //POST: Add a new plant
