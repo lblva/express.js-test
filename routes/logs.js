@@ -14,39 +14,34 @@ router.get('/', async (req, res) => {
 });
 
 
+// POST: Log watering for a plant
 router.post('/', async (req, res) => {
     const { days, plantId, user } = req.body;
-    console.log('Received request body:', req.body); // Add this line to log the request body
 
     // Check if all required data is provided
     if (!days || !plantId || !user) {
         return res.status(400).json({ error: 'Missing required fields: days, plantId, or user' });
     }
 
+    // Calculate the correct watering date based on 'days' (days ago)
     const wateringDate = new Date();
-    if (days !== 0) {
-        wateringDate.setDate(wateringDate.getDate() - days); // Subtract the specified number of days from the current date
-    }
-
-    // Log the final watering date for debugging
-    console.log('Watering Date:', wateringDate);
+    wateringDate.setDate(wateringDate.getDate() - days); // Subtract the specified number of days from the current date
 
     // Create a new log instance
     const newLog = new Log({
-        user: user,        
-        plant: plantId,    
-        wateredAt: wateringDate, 
+        user: user,        // User ID
+        plant: plantId,    // Plant ID
+        wateredAt: wateringDate, // Set the date as 'days ago'
     });
 
     try {
-        const savedLog = await newLog.save(); 
+        const savedLog = await newLog.save(); // Save the log to the database
         res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: 'Failed to add log' });
     }
 });
-
 
 
 
