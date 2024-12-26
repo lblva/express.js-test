@@ -25,11 +25,10 @@ router.post('/', async (req, res) => {
 
     // If days is 0, set wateringDate to today
     const wateringDate = new Date();
-    if (days === 0) {
-        wateringDate.setDate(wateringDate.getDate());  // Today
-    } else {
+    if (days !== 0) {
         wateringDate.setDate(wateringDate.getDate() - days); // Subtract the specified number of days from the current date
     }
+    // No need to call setDate() for today when days === 0
 
     // Create a new log instance
     const newLog = new Log({
@@ -46,6 +45,7 @@ router.post('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to add log' });
     }
 });
+
 
 
 
