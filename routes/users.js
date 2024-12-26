@@ -126,4 +126,26 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+router.delete('/users/:userId/plants', async (req, res) => {
+  const { userId } = req.params;
+  const { plantIds } = req.body;
+
+  // Proceed with deleting plants from the database
+  try {
+    // Example of deleting plants
+    const user = await User.findById(userId);  // Assuming you're using MongoDB
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.plants = user.plants.filter(plantId => !plantIds.includes(plantId));
+    await user.save();
+
+    return res.status(200).json({ message: 'Plants deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to delete plants', error });
+  }
+});
+
+
 export default router;
