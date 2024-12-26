@@ -1,5 +1,7 @@
 import express from 'express';
 import Log from '../models/Log.js';
+import User from '../models/User.js';
+import Plant from '../models/Plant.js';
 
 const router = express.Router();
 
@@ -12,6 +14,57 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to retrieve logs' });
     }
 });
+
+
+//GET: Retrieve and make a path? to know when to water the plants of a user?
+router.get('/user/:userId/to-water', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        console.log('Fetching data for user:', userId); // Debugging log
+
+        // Get the user's plants
+        const user = await User.findById(userId).populate('plants');
+        if (!user) {
+            console.error('User not found');
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        console.log('User plants:', user.plants); // Debugging log
+
+        // Prepare plant watering data
+        const plantWaterData = await Promise.all(
+            user.plants.map(async (plant) => {
+                // Find the latest log for the plant
+                const log = await Log.findOne({ user: userId, plant: plant._id })
+                    .sort({ wateredAt: -1 }); // Sort by date, descending
+
+                console.log(`Log for plant ${plant.name}:`, log); // Debugging log
+
+                const lastWatered = log ? log.wateredAt : null;
+                const nextWateringDate = lastWatered
+                    ? new Date(new Date(lastWatered).getTime() + plant.water * 24 * 60 * 60 * 1000)
+                    : null;
+
+                return {
+                    plantId: plant._id,
+                    plantName: plant.name,
+                    image: plant.image,
+                    nextWateringDate,
+                };
+            })
+        );
+
+        console.log('Plant watering data:', plantWaterData); // Debugging log
+
+        res.json(plantWaterData);
+    } catch (error) {
+        console.error('Error in /user/:userId/to-water:', error); // Log the error
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+
 
 
 // POST: Log watering for a plant
