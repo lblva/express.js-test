@@ -126,26 +126,52 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-router.delete('/users/:userId/plants', async (req, res) => {
-  const { userId } = req.params;
-  const { plantIds } = req.body;
+router.delete('/:id/plants', async (req, res) => {
+  const { id } = req.params; // User ID
+  const { plantId, plantIds } = req.body; // Single ID or multiple IDs
 
-  // Proceed with deleting plants from the database
+  // Validate input
+  if (!plantId && (!plantIds || !Array.isArray(plantIds))) {
+    return res.status(400).json({ message: 'Provide a plantId or an array of plantIds' });
+  }
+
   try {
-    // Example of deleting plants
-    const user = await User.findById(userId);  // Assuming you're using MongoDB
+    const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.plants = user.plants.filter(plantId => !plantIds.includes(plantId));
+    console.log('Plant(s) to delete:', plantId || plantIds);
+    console.log('User plants before deletion:', user.plants);
+
+    // Handle single ID
+    if (plantId) {
+      user.plants = user.plants.filter((plant) => plant.toString() !== plantId.toString());
+    }
+
+    // Handle multiple IDs
+    if (plantIds && Array.isArray(plantIds)) {
+      user.plants = user.plants.filter((plant) => !plantIds.includes(plant.toString()));
+    }
+
+    console.log('User plants after deletion:', user.plants);
+
+    // Save the updated user
     await user.save();
 
-    return res.status(200).json({ message: 'Plants deleted successfully' });
+    // Verify the changes persisted
+    const updatedUser = await User.findById(id);
+    console.log('Updated user plants:', updatedUser.plants);
+
+    return res.status(200).json({ message: 'Plants deleted successfully', plants: updatedUser.plants });
   } catch (error) {
+    console.error('Error occurred during deletion:', error);
     return res.status(500).json({ message: 'Failed to delete plants', error });
   }
 });
+
+
+
 
 
 export default router;
