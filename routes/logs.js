@@ -23,15 +23,19 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'Missing required fields: days, plantId, or user' });
     }
 
-    // Calculate the correct watering date based on 'days' (days ago)
+    // If days is 0, set wateringDate to today
     const wateringDate = new Date();
-    wateringDate.setDate(wateringDate.getDate() - days); // Subtract the specified number of days from the current date
+    if (days === 0) {
+        wateringDate.setDate(wateringDate.getDate());  // Today
+    } else {
+        wateringDate.setDate(wateringDate.getDate() - days); // Subtract the specified number of days from the current date
+    }
 
     // Create a new log instance
     const newLog = new Log({
         user: user,        // User ID
         plant: plantId,    // Plant ID
-        wateredAt: wateringDate, // Set the date as 'days ago'
+        wateredAt: wateringDate, // Set the date as 'days ago' or today
     });
 
     try {
@@ -42,6 +46,7 @@ router.post('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to add log' });
     }
 });
+
 
 
 
