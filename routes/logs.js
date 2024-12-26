@@ -19,9 +19,10 @@ router.post('/', async (req, res) => {
     const { days, plantId, user } = req.body;
 
     // Check if all required data is provided
-    if (!days || !plantId || !user) {
+    if (days === undefined || plantId === undefined || user === undefined) {
         return res.status(400).json({ error: 'Missing required fields: days, plantId, or user' });
     }
+    
 
     // Calculate the correct watering date based on 'days' (days ago)
     const wateringDate = new Date();
