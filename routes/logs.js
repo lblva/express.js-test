@@ -97,37 +97,34 @@ router.post('/', async (req, res) => {
     }
 });
 
-// POST: Mark a plant as watered
-router.post('/water', async (req, res) => {
-    const { userId, plantId } = req.body;
+// POST: Log watering for a plant
+router.post('/', async (req, res) => {
+    const { days, plantId, user, wateredAt } = req.body;
 
-    if (!userId || !plantId) {
-        return res.status(400).json({ error: 'Missing userId or plantId' });
+    // Check if all required data is provided
+    if (days === undefined || plantId === undefined || user === undefined || wateredAt === undefined) {
+        return res.status(400).json({ error: 'Missing required fields: days, plantId, user, or wateredAt' });
     }
+
+    // Parse wateredAt to a Date object
+    const wateredDate = new Date(wateredAt);
+
+    // Create a new log instance
+    const newLog = new Log({
+        user: user,          // User ID
+        plant: plantId,      // Plant ID
+        wateredAt: wateredDate, // Watered timestamp from client
+    });
 
     try {
-        // Find the plant's watering interval
-        const plant = await Plant.findById(plantId);
-        if (!plant) {
-            return res.status(404).json({ error: 'Plant not found' });
-        }
-
-        // Create a watering log
-        const wateredAt = new Date();
-        const newLog = new Log({
-            user: userId,
-            plant: plantId,
-            wateredAt,
-        });
-
-        await newLog.save();
-
-        // Respond with success
-        res.status(201).json({ message: 'Plant watered successfully', log: newLog });
+        const savedLog = await newLog.save(); // Save the log to the database
+        res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to log watering event', details: error.message });
+        console.log(error);
+        res.status(500).json({ error: 'Failed to add log' });
     }
 });
+
 
 
 
