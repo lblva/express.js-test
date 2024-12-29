@@ -91,35 +91,6 @@ router.post('/', async (req, res) => {
 });
 
 
-// POST: Log watering for a plant
-router.post('/', async (req, res) => {
-    const { days, plantId, user, wateredAt } = req.body;
-
-    // Check if all required data is provided
-    if (days === undefined || plantId === undefined || user === undefined || wateredAt === undefined) {
-        return res.status(400).json({ error: 'Missing required fields: days, plantId, user, or wateredAt' });
-    }
-
-    // Parse wateredAt to a Date object
-    const wateredDate = new Date(wateredAt);
-
-    // Create a new log instance
-    const newLog = new Log({
-        user: user,          // User ID
-        plant: plantId,      // Plant ID
-        wateredAt: wateredDate, // Watered timestamp from client
-    });
-
-    try {
-        const savedLog = await newLog.save(); // Save the log to the database
-        res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Failed to add log' });
-    }
-});
-
-
 
 
 // PUT: Update an existing log by ID (66f3ddb09524ebed4d774bad)
