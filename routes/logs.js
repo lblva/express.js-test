@@ -5,7 +5,7 @@ import Plant from '../models/Plant.js';
 
 const router = express.Router();
 
-// GET: Retrieve all logs
+//GET Retrieve all logs
 router.get('/', async (req, res) => {
     try {
         const logs = await Log.find(); // Fetch all logs from the database
@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET: Retrieve watering status for a user's plants
+// GET: Retrieve and calculate when plants need watering
 router.get('/user/:userId/to-water', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -26,92 +26,134 @@ router.get('/user/:userId/to-water', async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Prepare watering data for each plant
+        // Prepare plant watering data
         const plantWaterData = await Promise.all(
             user.plants.map(async (plant) => {
                 // Find the latest log for the plant
                 const log = await Log.findOne({ user: userId, plant: plant._id })
-                    .sort({ wateredAt: -1 });
+                    .sort({ wateredAt: -1 }); // Sort by date, descending
 
-                // Determine if the plant is still considered watered
-                const isWatered = log && new Date() < new Date(log.wateredUntil);
+                const lastWatered = log ? log.wateredAt : null;
+                const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Water frequency in ms
+                const nextWateringDate = lastWatered
+                    ? new Date(new Date(lastWatered).getTime() + wateringFrequency)
+                    : null;
+
+                const remainingTime = nextWateringDate
+                    ? Math.max(0, nextWateringDate.getTime() - Date.now())
+                    : null;
 
                 return {
                     plantId: plant._id,
                     plantName: plant.name,
                     image: plant.image,
-                    isWatered, // Add watering status
-                    nextWateringDate: log ? log.wateredUntil : null,
+                    nextWateringDate,
+                    remainingTime, // Time remaining before the next watering in ms
                 };
             })
         );
 
         res.json(plantWaterData);
     } catch (error) {
-        console.error(error);
+        console.error('Error in /user/:userId/to-water:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
+
+
+
+
 // POST: Log watering for a plant
 router.post('/', async (req, res) => {
-    const { plantId, user, wateredAt = new Date() } = req.body;
+    const { days, plantId, user } = req.body;
 
-    if (!plantId || !user) {
-        return res.status(400).json({ error: 'Missing required fields: plantId or user' });
+    // Check if all required data is provided
+    if (days === undefined || plantId === undefined || user === undefined) {
+        return res.status(400).json({ error: 'Missing required fields: days, plantId, or user' });
     }
+    
 
-    // Calculate `wateredUntil` (10 hours after `wateredAt`)
-    const wateredDate = new Date(wateredAt);
-    const wateredUntil = new Date(wateredDate.getTime() + 30 * 1000);
+    // Calculate the correct watering date based on 'days' (days ago)
+    const wateringDate = new Date();
+    wateringDate.setDate(wateringDate.getDate() - days); // Subtract the specified number of days from the current date
 
+    // Create a new log instance
     const newLog = new Log({
-        user,
-        plant: plantId,
-        wateredAt: wateredDate,
-        wateredUntil, // Include the calculated field
+        user: user,        // User ID
+        plant: plantId,    // Plant ID
+        wateredAt: wateringDate, // Set the date as 'days ago'
     });
 
     try {
         const savedLog = await newLog.save(); // Save the log to the database
         res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
     } catch (error) {
-        console.error(error);
+        console.log(error);
         res.status(500).json({ error: 'Failed to add log' });
     }
 });
 
-// PUT: Update an existing log by ID
-router.put('/:id', async (req, res) => {
-    const { id } = req.params;
-    const updatedLogData = req.body;
+// POST: Log watering for a plant
+router.post('/', async (req, res) => {
+    const { days, plantId, user, wateredAt } = req.body;
 
+    // Check if all required data is provided
+    if (days === undefined || plantId === undefined || user === undefined || wateredAt === undefined) {
+        return res.status(400).json({ error: 'Missing required fields: days, plantId, user, or wateredAt' });
+    }
+
+    // Parse wateredAt to a Date object
+    const wateredDate = new Date(wateredAt);
+
+    // Create a new log instance
+    const newLog = new Log({
+        user: user,          // User ID
+        plant: plantId,      // Plant ID
+        wateredAt: wateredDate, // Watered timestamp from client
+    });
+
+    try {
+        const savedLog = await newLog.save(); // Save the log to the database
+        res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Failed to add log' });
+    }
+});
+
+
+
+
+// PUT: Update an existing log by ID (66f3ddb09524ebed4d774bad)
+router.put('/:id', async (req, res) => {
+    const updatedLogData = req.body; // Get the updated data from the request body
+    const { id } = req.params;
     try {
         const updatedLog = await Log.findByIdAndUpdate(id, updatedLogData, { new: true });
         if (updatedLog) {
             res.status(200).json({ log: 'Log updated successfully!', logData: updatedLog });
         } else {
-            res.status(404).json({ message: 'Log not found' });
+            res.status(404).json({ log: 'Log not found' });
         }
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'Failed to update log' });
     }
 });
+
 
 // DELETE: Remove a log by ID
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        const deletedLog = await Log.findByIdAndDelete(id);
+        const deletedLog = await Log.findByIdAndDelete(id); // Find and delete the log by ID
         if (deletedLog) {
-            res.status(200).json({ message: 'Log deleted successfully!' });
+            res.status(200).json({ log: 'Log deleted successfully!' });
         } else {
-            res.status(404).json({ message: 'Log not found' });
+            res.status(404).json({ log: 'Log not found' });
         }
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'Failed to delete log' });
     }
 });
