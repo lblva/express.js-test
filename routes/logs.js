@@ -15,51 +15,46 @@ router.get('/', async (req, res) => {
     }
 });
 
-
-//GET: Retrieve and make a path? to know when to water the plants of a user?
+// GET: Retrieve and calculate when plants need watering
 router.get('/user/:userId/to-water', async (req, res) => {
     try {
         const { userId } = req.params;
 
-        console.log('Fetching data for user:', userId); // Debugging log
-
         // Get the user's plants
         const user = await User.findById(userId).populate('plants');
         if (!user) {
-            console.error('User not found');
             return res.status(404).json({ message: 'User not found' });
         }
-
-        console.log('User plants:', user.plants); // Debugging log
 
         // Prepare plant watering data
         const plantWaterData = await Promise.all(
             user.plants.map(async (plant) => {
                 // Find the latest log for the plant
                 const log = await Log.findOne({ user: userId, plant: plant._id })
-                    .sort({ wateredAt: -1 }); // Sort by date, descending
-
-                console.log(`Log for plant ${plant.name}:`, log); // Debugging log
+                    .sort({ wateredAt: -1 });
 
                 const lastWatered = log ? log.wateredAt : null;
+                const validUntil = log ? log.validUntil : null;
+
+                const isWatered = validUntil && new Date(validUntil) > new Date();
+
+                const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Water frequency in ms
                 const nextWateringDate = lastWatered
-                    ? new Date(new Date(lastWatered).getTime() + plant.water * 24 * 60 * 60 * 1000)
+                    ? new Date(new Date(lastWatered).getTime() + wateringFrequency)
                     : null;
 
                 return {
                     plantId: plant._id,
                     plantName: plant.name,
-                    image: plant.image,
                     nextWateringDate,
+                    isWatered,
                 };
             })
         );
 
-        console.log('Plant watering data:', plantWaterData); // Debugging log
-
         res.json(plantWaterData);
     } catch (error) {
-        console.error('Error in /user/:userId/to-water:', error); // Log the error
+        console.error('Error in /user/:userId/to-water:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -67,29 +62,27 @@ router.get('/user/:userId/to-water', async (req, res) => {
 
 
 
-// POST: Log watering for a plant
+
 router.post('/', async (req, res) => {
     const { days, plantId, user } = req.body;
 
-    // Check if all required data is provided
-    if (days === undefined || plantId === undefined || user === undefined) {
-        return res.status(400).json({ error: 'Missing required fields: days, plantId, or user' });
-    }
-    
+    // Calculate the watering date and validUntil timestamp
+    const wateredAt = new Date();
+    wateredAt.setDate(wateredAt.getDate() - days);
 
-    // Calculate the correct watering date based on 'days' (days ago)
-    const wateringDate = new Date();
-    wateringDate.setDate(wateringDate.getDate() - days); // Subtract the specified number of days from the current date
+    const validUntil = new Date(wateredAt);
+    validUntil.setSeconds(validUntil.getSeconds() + 30); // Test with 30 seconds
 
     // Create a new log instance
     const newLog = new Log({
-        user: user,        // User ID
-        plant: plantId,    // Plant ID
-        wateredAt: wateringDate, // Set the date as 'days ago'
+        user: user,
+        plant: plantId,
+        wateredAt,
+        validUntil,
     });
 
     try {
-        const savedLog = await newLog.save(); // Save the log to the database
+        const savedLog = await newLog.save();
         res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
     } catch (error) {
         console.log(error);
