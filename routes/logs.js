@@ -38,7 +38,6 @@ router.get('/user/:userId/to-water', async (req, res) => {
 
                 const isWatered = validUntil && new Date(validUntil) > new Date();
 
-                // Calculate the next watering date based on the last watered date and watering frequency
                 const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Water frequency in ms
                 const nextWateringDate = lastWatered
                     ? new Date(new Date(lastWatered).getTime() + wateringFrequency)
@@ -60,23 +59,26 @@ router.get('/user/:userId/to-water', async (req, res) => {
     }
 });
 
-// POST: Log watering for a plant
+
+
+
+
 router.post('/', async (req, res) => {
     const { days, plantId, user } = req.body;
 
     // Calculate the watering date and validUntil timestamp
     const wateredAt = new Date();
-    wateredAt.setDate(wateredAt.getDate() - days); // Subtract days to get the watering date
+    wateredAt.setDate(wateredAt.getDate() - days);
 
     const validUntil = new Date(wateredAt);
-    validUntil.setSeconds(validUntil.getSeconds() + 30); // Keep the 30-second watering status
+    validUntil.setSeconds(validUntil.getSeconds() + 30); // Test with 30 seconds
 
     // Create a new log instance
     const newLog = new Log({
         user: user,
         plant: plantId,
         wateredAt,
-        validUntil, // This will show the plant as watered for 30 seconds
+        validUntil,
     });
 
     try {
@@ -88,6 +90,34 @@ router.post('/', async (req, res) => {
     }
 });
 
+
+// POST: Log watering for a plant
+router.post('/', async (req, res) => {
+    const { days, plantId, user, wateredAt } = req.body;
+
+    // Check if all required data is provided
+    if (days === undefined || plantId === undefined || user === undefined || wateredAt === undefined) {
+        return res.status(400).json({ error: 'Missing required fields: days, plantId, user, or wateredAt' });
+    }
+
+    // Parse wateredAt to a Date object
+    const wateredDate = new Date(wateredAt);
+
+    // Create a new log instance
+    const newLog = new Log({
+        user: user,          // User ID
+        plant: plantId,      // Plant ID
+        wateredAt: wateredDate, // Watered timestamp from client
+    });
+
+    try {
+        const savedLog = await newLog.save(); // Save the log to the database
+        res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ error: 'Failed to add log' });
+    }
+});
 
 
 
