@@ -63,7 +63,7 @@ router.post('/', async (req, res) => {
 
     // Calculate `wateredUntil` (10 hours after `wateredAt`)
     const wateredDate = new Date(wateredAt);
-    const wateredUntil = new Date(wateredDate.getTime() + 10 * 60 * 60 * 1000);
+    const wateredUntil = new Date(wateredDate.getTime() + 30 * 1000);
 
     const newLog = new Log({
         user,
