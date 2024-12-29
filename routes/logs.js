@@ -28,20 +28,28 @@ router.get('/user/:userId/to-water', async (req, res) => {
                 const log = await Log.findOne({ user: userId, plant: plant._id })
                     .sort({ wateredAt: -1 });
 
+                if (!log) {
+                    return {
+                        plantId: plant._id,
+                        plantName: plant.name,
+                        nextWateringDate: null,
+                        isWatered: false,
+                    };
+                }
+
+                // Calculate the 'days' by finding the difference between 'wateredAt' and today's date
+                const wateredAt = new Date(log.wateredAt);
+                const days = Math.floor((new Date() - wateredAt) / (24 * 60 * 60 * 1000)); // Calculate how many days ago it was watered
+
+                // Use the 'days' value to calculate the next watering date
                 const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Frequency in ms
-
-                let wateredAt = log ? new Date(log.wateredAt) : new Date();
-                
-                // Subtract the days based on how many days have passed since the last watering
-                const daysSinceWatered = log ? Math.floor((new Date() - wateredAt) / (24 * 60 * 60 * 1000)) : 0;
-                wateredAt.setDate(wateredAt.getDate() - daysSinceWatered);
-
-                // Calculate next watering date
                 const nextWateringDate = new Date(wateredAt.getTime() + wateringFrequency);
 
                 const validUntil = log ? log.validUntil : null;
                 const isWatered = validUntil && new Date(validUntil) > new Date();
-
+                // Logging for debugging purposes
+                console.log(`Plant: ${plant.name}, WateredAt: ${wateredAt}, NextWateringDate: ${nextWateringDate}, ValidUntil: ${validUntil}`);
+                
                 return {
                     plantId: plant._id,
                     plantName: plant.name,
@@ -57,7 +65,6 @@ router.get('/user/:userId/to-water', async (req, res) => {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
-
 
 
 // POST: Add a new watering log and include nextWateringDate in the response
