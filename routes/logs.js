@@ -33,16 +33,20 @@ router.get('/user/:userId/to-water', async (req, res) => {
                 const log = await Log.findOne({ user: userId, plant: plant._id })
                     .sort({ wateredAt: -1 });
 
-                const lastWatered = log ? log.wateredAt : null;
                 const validUntil = log ? log.validUntil : null;
 
                 const isWatered = validUntil && new Date(validUntil) > new Date();
 
                 const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Water frequency in ms
-                const nextWateringDate = lastWatered
-                    ? new Date(new Date(lastWatered).getTime() + wateringFrequency)
-                    : null;
+                // Calculate nextWateringDate directly from log.wateredAt
+                const nextWateringDate = log
+                ? new Date(log.wateredAt.getTime() + wateringFrequency)
+                : null;
 
+
+
+                console.log('Watering Frequency (ms):', wateringFrequency);
+                console.log('Calculated Next Watering Date:', nextWateringDate);
                 return {
                     plantId: plant._id,
                     plantName: plant.name,
@@ -51,6 +55,7 @@ router.get('/user/:userId/to-water', async (req, res) => {
                 };
             })
         );
+
 
         res.json(plantWaterData);
     } catch (error) {
@@ -81,6 +86,10 @@ router.post('/', async (req, res) => {
         validUntil,
     });
 
+    console.log('wateredAt:', wateredAt);
+
+
+
     try {
         const savedLog = await newLog.save();
         res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
@@ -89,6 +98,7 @@ router.post('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to add log' });
     }
 });
+
 
 
 
