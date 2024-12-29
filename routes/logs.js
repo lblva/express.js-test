@@ -15,7 +15,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET: Retrieve and calculate when plants need watering
 router.get('/user/:userId/to-water', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -29,24 +28,19 @@ router.get('/user/:userId/to-water', async (req, res) => {
                 const log = await Log.findOne({ user: userId, plant: plant._id })
                     .sort({ wateredAt: -1 });
 
-                if (!log) {
-                    return {
-                        plantId: plant._id,
-                        plantName: plant.name,
-                        nextWateringDate: null,
-                        isWatered: false,
-                    };
-                }
+                const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Frequency in ms
 
-                const wateredAt = new Date(log.wateredAt);
-                const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // in milliseconds
+                let wateredAt = log ? new Date(log.wateredAt) : new Date();
+                
+                // Subtract the days based on how many days have passed since the last watering
+                const daysSinceWatered = log ? Math.floor((new Date() - wateredAt) / (24 * 60 * 60 * 1000)) : 0;
+                wateredAt.setDate(wateredAt.getDate() - daysSinceWatered);
+
+                // Calculate next watering date
                 const nextWateringDate = new Date(wateredAt.getTime() + wateringFrequency);
-                const validUntil = log.validUntil ? new Date(log.validUntil) : null;
-                const isWatered = validUntil && validUntil > new Date();
 
-                // Logging for debugging purposes
-                console.log(`Plant: ${plant.name}, WateredAt: ${wateredAt}, NextWateringDate: ${nextWateringDate}, ValidUntil: ${validUntil}`);
-
+                const validUntil = log ? log.validUntil : null;
+                const isWatered = validUntil && new Date(validUntil) > new Date();
 
                 return {
                     plantId: plant._id,
@@ -72,10 +66,10 @@ router.post('/', async (req, res) => {
 
     try {
         const wateredAt = new Date();
-        wateredAt.setDate(wateredAt.getDate() - days); // Adjust the watered date based on 'days' provided
+        wateredAt.setDate(wateredAt.getDate() - days);
 
         const validUntil = new Date(wateredAt);
-        validUntil.setSeconds(validUntil.getSeconds() + 30); // Adding 30 seconds for the "valid until" time
+        validUntil.setSeconds(validUntil.getSeconds() + 30);
 
         const plant = await Plant.findById(plantId);
         if (!plant) {
@@ -84,7 +78,7 @@ router.post('/', async (req, res) => {
 
         const wateringFrequency = plant.water || 7; // Default to 7 days if not defined
         const nextWateringDate = new Date(wateredAt);
-        nextWateringDate.setDate(wateredAt.getDate() + wateringFrequency); // Calculate the next watering date
+        nextWateringDate.setDate(wateredAt.getDate() + wateringFrequency);
 
         const newLog = new Log({
             user,
@@ -98,14 +92,13 @@ router.post('/', async (req, res) => {
         res.status(201).json({
             message: 'Log added successfully!',
             logData: savedLog,
-            nextWateringDate: nextWateringDate.toISOString(), // Return the calculated next watering date
+            nextWateringDate, // Include next watering date in response
         });
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: 'Failed to add log' });
     }
 });
-
 
 // PUT: Update an existing log by ID
 router.put('/:id', async (req, res) => {
