@@ -5,7 +5,7 @@ import Plant from '../models/Plant.js';
 
 const router = express.Router();
 
-//GET Retrieve all logs
+// GET Retrieve all logs
 router.get('/', async (req, res) => {
     try {
         const logs = await Log.find(); // Fetch all logs from the database
@@ -34,10 +34,6 @@ router.get('/user/:userId/to-water', async (req, res) => {
                     .sort({ wateredAt: -1 });
 
                 const lastWatered = log ? log.wateredAt : null;
-                const validUntil = log ? log.validUntil : null;
-
-                const isWatered = validUntil && new Date(validUntil) > new Date();
-
                 const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Water frequency in ms
                 const nextWateringDate = lastWatered
                     ? new Date(new Date(lastWatered).getTime() + wateringFrequency)
@@ -47,7 +43,6 @@ router.get('/user/:userId/to-water', async (req, res) => {
                     plantId: plant._id,
                     plantName: plant.name,
                     nextWateringDate,
-                    isWatered,
                 };
             })
         );
@@ -59,19 +54,21 @@ router.get('/user/:userId/to-water', async (req, res) => {
     }
 });
 
-
-
-
-
+// POST: Log watering for a plant
 router.post('/', async (req, res) => {
     const { days, plantId, user } = req.body;
 
+    // Check if all required data is provided
+    if (days === undefined || plantId === undefined || user === undefined) {
+        return res.status(400).json({ error: 'Missing required fields: days, plantId, or user' });
+    }
+
     // Calculate the watering date and validUntil timestamp
     const wateredAt = new Date();
-    wateredAt.setDate(wateredAt.getDate() - days);
+    wateredAt.setDate(wateringDate.getDate() - days); // Subtract days from current date
 
     const validUntil = new Date(wateredAt);
-    validUntil.setSeconds(validUntil.getSeconds() + 30); // Test with 30 seconds
+    validUntil.setSeconds(validUntil.getSeconds() + 30); // Example: Set 30 seconds ahead for testing
 
     // Create a new log instance
     const newLog = new Log({
@@ -79,35 +76,6 @@ router.post('/', async (req, res) => {
         plant: plantId,
         wateredAt,
         validUntil,
-    });
-
-    try {
-        const savedLog = await newLog.save();
-        res.status(201).json({ log: 'Log added successfully!', logData: savedLog });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Failed to add log' });
-    }
-});
-
-
-// POST: Log watering for a plant
-router.post('/', async (req, res) => {
-    const { days, plantId, user, wateredAt } = req.body;
-
-    // Check if all required data is provided
-    if (days === undefined || plantId === undefined || user === undefined || wateredAt === undefined) {
-        return res.status(400).json({ error: 'Missing required fields: days, plantId, user, or wateredAt' });
-    }
-
-    // Parse wateredAt to a Date object
-    const wateredDate = new Date(wateredAt);
-
-    // Create a new log instance
-    const newLog = new Log({
-        user: user,          // User ID
-        plant: plantId,      // Plant ID
-        wateredAt: wateredDate, // Watered timestamp from client
     });
 
     try {
@@ -119,12 +87,9 @@ router.post('/', async (req, res) => {
     }
 });
 
-
-
-
-// PUT: Update an existing log by ID (66f3ddb09524ebed4d774bad)
+// PUT: Update an existing log by ID
 router.put('/:id', async (req, res) => {
-    const updatedLogData = req.body; // Get the updated data from the request body
+    const updatedLogData = req.body;
     const { id } = req.params;
     try {
         const updatedLog = await Log.findByIdAndUpdate(id, updatedLogData, { new: true });
@@ -138,11 +103,9 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-
 // DELETE: Remove a log by ID
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
-
     try {
         const deletedLog = await Log.findByIdAndDelete(id); // Find and delete the log by ID
         if (deletedLog) {
