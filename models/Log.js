@@ -5,6 +5,7 @@ const logSchema = new mongoose.Schema({
     plant: {type: mongoose.Schema.Types.ObjectId, ref: 'Plant', required: true },
     wateredAt: {type: Date, default: Date.now},
     validUntil: { type: Date },
+    days: { type: Number },
 });
 
 const Log = mongoose.model('Log', logSchema);

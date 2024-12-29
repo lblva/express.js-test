@@ -5,16 +5,7 @@ import Plant from '../models/Plant.js';
 
 const router = express.Router();
 
-// GET: Retrieve all logs
-router.get('/', async (req, res) => {
-    try {
-        const logs = await Log.find();
-        res.status(200).json(logs);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve logs' });
-    }
-});
-
+// GET: Retrieve and calculate when plants need watering
 router.get('/user/:userId/to-water', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -37,19 +28,16 @@ router.get('/user/:userId/to-water', async (req, res) => {
                     };
                 }
 
-                // Calculate the 'days' by finding the difference between 'wateredAt' and today's date
                 const wateredAt = new Date(log.wateredAt);
-                const days = Math.floor((new Date() - wateredAt) / (24 * 60 * 60 * 1000)); // Calculate how many days ago it was watered
+                const days = log.days; // Retrieve the 'days' value from the log
+                wateredAt.setDate(wateredAt.getDate() - days); // Subtract 'days' like in the POST route
 
-                // Use the 'days' value to calculate the next watering date
                 const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Frequency in ms
                 const nextWateringDate = new Date(wateredAt.getTime() + wateringFrequency);
 
                 const validUntil = log ? log.validUntil : null;
                 const isWatered = validUntil && new Date(validUntil) > new Date();
-                // Logging for debugging purposes
-                console.log(`Plant: ${plant.name}, WateredAt: ${wateredAt}, NextWateringDate: ${nextWateringDate}, ValidUntil: ${validUntil}`);
-                
+
                 return {
                     plantId: plant._id,
                     plantName: plant.name,
@@ -92,6 +80,7 @@ router.post('/', async (req, res) => {
             plant: plantId,
             wateredAt,
             validUntil,
+            days,
         });
 
         const savedLog = await newLog.save();
@@ -99,7 +88,7 @@ router.post('/', async (req, res) => {
         res.status(201).json({
             message: 'Log added successfully!',
             logData: savedLog,
-            nextWateringDate, // Include next watering date in response
+            nextWateringDate,
         });
     } catch (error) {
         console.log(error);
