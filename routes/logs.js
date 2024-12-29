@@ -44,6 +44,10 @@ router.get('/user/:userId/to-water', async (req, res) => {
                 const validUntil = log.validUntil ? new Date(log.validUntil) : null;
                 const isWatered = validUntil && validUntil > new Date();
 
+                // Logging for debugging purposes
+                console.log(`Plant: ${plant.name}, WateredAt: ${wateredAt}, NextWateringDate: ${nextWateringDate}, ValidUntil: ${validUntil}`);
+
+
                 return {
                     plantId: plant._id,
                     plantName: plant.name,
