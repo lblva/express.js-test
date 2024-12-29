@@ -29,21 +29,25 @@ router.get('/user/:userId/to-water', async (req, res) => {
                 const log = await Log.findOne({ user: userId, plant: plant._id })
                     .sort({ wateredAt: -1 });
 
-                const validUntil = log ? log.validUntil : null;
-                const isWatered = validUntil && new Date(validUntil) > new Date();
-                
-                // Calculate watering frequency (in ms)
-                const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Frequency in ms
-                
-                // Calculate nextWateringDate similar to how it's done in POST
-                const nextWateringDate = log
-                    ? new Date(log.wateredAt.getTime() + wateringFrequency)
-                    : null;
+                if (!log) {
+                    return {
+                        plantId: plant._id,
+                        plantName: plant.name,
+                        nextWateringDate: null,
+                        isWatered: false,
+                    };
+                }
+
+                const wateredAt = new Date(log.wateredAt);
+                const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // in milliseconds
+                const nextWateringDate = new Date(wateredAt.getTime() + wateringFrequency);
+                const validUntil = log.validUntil ? new Date(log.validUntil) : null;
+                const isWatered = validUntil && validUntil > new Date();
 
                 return {
                     plantId: plant._id,
                     plantName: plant.name,
-                    nextWateringDate: nextWateringDate ? nextWateringDate.toISOString() : null, // Ensure toISOString() is used
+                    nextWateringDate: nextWateringDate.toISOString(),
                     isWatered,
                 };
             })
@@ -57,16 +61,17 @@ router.get('/user/:userId/to-water', async (req, res) => {
 });
 
 
+
 // POST: Add a new watering log and include nextWateringDate in the response
 router.post('/', async (req, res) => {
     const { days, plantId, user } = req.body;
 
     try {
         const wateredAt = new Date();
-        wateredAt.setDate(wateredAt.getDate() - days);
+        wateredAt.setDate(wateredAt.getDate() - days); // Adjust the watered date based on 'days' provided
 
         const validUntil = new Date(wateredAt);
-        validUntil.setSeconds(validUntil.getSeconds() + 30);
+        validUntil.setSeconds(validUntil.getSeconds() + 30); // Adding 30 seconds for the "valid until" time
 
         const plant = await Plant.findById(plantId);
         if (!plant) {
@@ -75,7 +80,7 @@ router.post('/', async (req, res) => {
 
         const wateringFrequency = plant.water || 7; // Default to 7 days if not defined
         const nextWateringDate = new Date(wateredAt);
-        nextWateringDate.setDate(wateredAt.getDate() + wateringFrequency);
+        nextWateringDate.setDate(wateredAt.getDate() + wateringFrequency); // Calculate the next watering date
 
         const newLog = new Log({
             user,
@@ -89,13 +94,14 @@ router.post('/', async (req, res) => {
         res.status(201).json({
             message: 'Log added successfully!',
             logData: savedLog,
-            nextWateringDate, // Include next watering date in response
+            nextWateringDate: nextWateringDate.toISOString(), // Return the calculated next watering date
         });
     } catch (error) {
         console.log(error);
         res.status(500).json({ error: 'Failed to add log' });
     }
 });
+
 
 // PUT: Update an existing log by ID
 router.put('/:id', async (req, res) => {
