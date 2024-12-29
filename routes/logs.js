@@ -31,15 +31,19 @@ router.get('/user/:userId/to-water', async (req, res) => {
 
                 const validUntil = log ? log.validUntil : null;
                 const isWatered = validUntil && new Date(validUntil) > new Date();
+                
+                // Calculate watering frequency (in ms)
                 const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Frequency in ms
+                
+                // Calculate nextWateringDate similar to how it's done in POST
                 const nextWateringDate = log
-                    ? new Date(log.wateredAt.getTime() + wateringFrequency).toISOString()
+                    ? new Date(log.wateredAt.getTime() + wateringFrequency)
                     : null;
 
                 return {
                     plantId: plant._id,
                     plantName: plant.name,
-                    nextWateringDate,
+                    nextWateringDate: nextWateringDate ? nextWateringDate.toISOString() : null, // Ensure toISOString() is used
                     isWatered,
                 };
             })
@@ -50,8 +54,8 @@ router.get('/user/:userId/to-water', async (req, res) => {
         console.error('Error in /user/:userId/to-water:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
-    
 });
+
 
 // POST: Add a new watering log and include nextWateringDate in the response
 router.post('/', async (req, res) => {
