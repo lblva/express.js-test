@@ -5,6 +5,16 @@ import Plant from '../models/Plant.js';
 
 const router = express.Router();
 
+// GET: Retrieve all logs
+router.get('/', async (req, res) => {
+    try {
+        const logs = await Log.find();
+        res.status(200).json(logs);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to retrieve logs' });
+    }
+});
+
 // GET: Retrieve and calculate when plants need watering
 router.get('/user/:userId/to-water', async (req, res) => {
     try {
@@ -29,11 +39,17 @@ router.get('/user/:userId/to-water', async (req, res) => {
                 }
 
                 const wateredAt = new Date(log.wateredAt);
-                const days = log.days; // Retrieve the 'days' value from the log
+                console.log('wateredAt:', wateredAt);  // Log wateredAt
+                console.log('days:', log.days);  // Log days
+                const days = log.days;
+                
+
                 wateredAt.setDate(wateredAt.getDate() - days); // Subtract 'days' like in the POST route
 
                 const wateringFrequency = plant.water * 24 * 60 * 60 * 1000; // Frequency in ms
                 const nextWateringDate = new Date(wateredAt.getTime() + wateringFrequency);
+                console.log('nextWateringDate:', nextWateringDate);  // Log the computed nextWateringDate
+
 
                 const validUntil = log ? log.validUntil : null;
                 const isWatered = validUntil && new Date(validUntil) > new Date();
@@ -54,12 +70,14 @@ router.get('/user/:userId/to-water', async (req, res) => {
     }
 });
 
-
 // POST: Add a new watering log and include nextWateringDate in the response
 router.post('/', async (req, res) => {
+    console.log('Request Body:', req.body);
     const { days, plantId, user } = req.body;
 
     try {
+        
+
         const wateredAt = new Date();
         wateredAt.setDate(wateredAt.getDate() - days);
 
@@ -71,7 +89,7 @@ router.post('/', async (req, res) => {
             return res.status(404).json({ error: 'Plant not found' });
         }
 
-        const wateringFrequency = plant.water || 7; // Default to 7 days if not defined
+        const wateringFrequency = plant.water * 24 * 60 * 60 * 1000;
         const nextWateringDate = new Date(wateredAt);
         nextWateringDate.setDate(wateredAt.getDate() + wateringFrequency);
 
@@ -88,7 +106,7 @@ router.post('/', async (req, res) => {
         res.status(201).json({
             message: 'Log added successfully!',
             logData: savedLog,
-            nextWateringDate,
+            nextWateringDate, 
         });
     } catch (error) {
         console.log(error);
